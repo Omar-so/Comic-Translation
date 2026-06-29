@@ -1,0 +1,60 @@
+# Web Framework
+fastapi
+uvicorn
+
+# Async & HTTP
+aiohttp
+aioredis
+aiofiles
+
+
+redis
+huggingface_hub
+paddleocr
+
+transformers
+ultralytics
+# Image Processing
+opencv-python
+numpy
+
+# Text Rendering & Graphics
+pycairo
+PyGObject
+
+# Translation
+translate
+
+# Configuration
+pydantic-settings
+pydantic
+python-dotenv
+
+# Roboflow Detection (corrected version)
+inference-sdk 
+
+cloudinary
+
+celery
+celery[rabbitmq]    # if using RabbitMQ as broker
+flower              # monitoring dashboard (optional)
+kombu
+billiard
+vine
+
+sqlalchemy
+
+fastapi
+PIL
+asyncio
+jose
+
+pydantic
+
+passlib
+
+torch
+
+requests
+
+Path

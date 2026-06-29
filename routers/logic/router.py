@@ -1,0 +1,50 @@
+from typing import List
+from fastapi import APIRouter, Depends, UploadFile
+from sqlalchemy.orm import Session
+
+from .depended import get_current_user
+from models.database import get_db
+from schema import TranslateComicRequest
+from . import service
+from fastapi.responses import StreamingResponse 
+from fastapi import  Request
+
+
+from .utils import event_stream
+
+from depends.depends import get_cdn, get_cache
+import asyncio
+
+router = APIRouter(prefix="/logic", tags=["Logic"], dependencies=[Depends(get_current_user)])
+
+
+@router.post("/translate-comic")
+async def translate_comic(
+    payload: TranslateComicRequest,
+    files: List[UploadFile],
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cdn = Depends(get_cdn),
+    cache = Depends(get_cache)
+
+):
+    exist = await cache.getAsync(f"${payload.MangaID}%${payload.ChapterID}")
+    if exist : 
+        return exist
+    contents = await asyncio.gather(*[f.read() for f in files])
+    chapter_ids = await service.create_chapters(payload, contents, user, db ,cdn )
+
+    return {"chapter_ids": chapter_ids}
+    
+
+
+
+
+@router.get("/events/")
+async def sse(user_id: str, request: Request, last_event_id: str | None = None  , user=Depends(get_current_user), cache = Depends(get_cache)  ):
+    start_id = last_event_id if last_event_id else "$"
+    return StreamingResponse(
+        event_stream(user.user_id, request, cache, start_id),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
