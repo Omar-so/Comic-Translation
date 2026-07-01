@@ -4,15 +4,17 @@ from PIL import Image
 from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
 
-from utils.Lame import Inpainting
-from utils.image_utils import download_image
-from celery.celery import  yolo_model
+from app.utils.Lame import Inpainting
+from app.utils.image_utils import download_image
+
+from app.Worker.model_registry import get_model
 
 from .base import DetectionStrategy
 
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import Future
+
 
 # [{
 #  "MangaID": "string",
@@ -51,7 +53,7 @@ class TextSegmenter(DetectionStrategy):
 
 
     def __init__(self):
-        self.model = yolo_model;
+        self.model = get_model("detection");
         self.executor = ThreadPoolExecutor()  
 
 

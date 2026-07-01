@@ -1,12 +1,11 @@
 from sqlalchemy import select
 from passlib.context import CryptContext
-from models.user import User
+from app.models.user import User
 from fastapi import HTTPException
-from schema import UserResponse
-from utils.security import create_access_token
+from app.utils.security import create_access_token
 
 from sqlalchemy.orm import  Session
-from .schema import SignUpRequest , SignInRequest
+from .schema import SignUpRequest , SignInRequest ,UserResponse
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], bcrypt__rounds=12)

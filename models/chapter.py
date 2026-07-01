@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, String, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-# models/chapter.py
 from .base import Base
 
 class Chapter(Base):

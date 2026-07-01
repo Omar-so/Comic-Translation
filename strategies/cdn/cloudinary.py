@@ -23,7 +23,7 @@ from io import BytesIO
 import cloudinary
 import cloudinary.uploader
 
-from strategies.cdn.base import CDNStrategy
+from .base import CDNStrategy
 
 class CloudinaryCDNStrategy(CDNStrategy):
     

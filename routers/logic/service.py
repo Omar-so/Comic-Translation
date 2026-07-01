@@ -1,17 +1,19 @@
 import asyncio
 from sqlalchemy.orm import Session
 
-from models.chapter import Chapter
-from config import settings
+from app.models.chapter import Chapter
+from app.config import settings
 from .utils import build_canvas
-from schema import TranslateComicRequest
+from .schema import TranslateComicRequest
 from fastapi import FastAPI, Response , Request
 
-from tasks.pipeline import process
+from app.tasks.pipeline import process
 
-from strategies.cdn.base import CDNStrategy
-from utils.cache import ImageCache
+from app.strategies.cdn.base import CDNStrategy
+from app.utils.cache import ImageCache
 import json
+
+from app.celery.celery import celery
 
 
 async def create_chapters(
@@ -20,43 +22,35 @@ async def create_chapters(
     user,
     db: Session,
     cdn: CDNStrategy
-) -> list[int]:
-    chapter_ids = []
-    cursor = 0
+) -> str:
+    chapter_id = payload.ChapterID
 
-    chapter_id = payload.ChapterID  
- 
-
-        # build canvas + derive positions from actual image shapes
-    canvas_bytes, positions =  build_canvas( contents )
-    
-
+    canvas_bytes, positions = build_canvas(contents)
     canvas_url = await cdn.upload(canvas_bytes, f"{chapter_id}.png")
 
     chapter = Chapter(
-            comic_name=payload.MangaID,
-            chapter_id=chapter_id,
-            canvas_url_before=canvas_url,
-            canvas_url_after="",
-            user_id=user.id,
-        )
+        comic_name=payload.MangaID,
+        chapter_id=chapter_id,
+        canvas_url_before=canvas_url,
+        canvas_url_after="",
+        user_id=user.id,
+    )
     db.add(chapter)
     db.flush()
 
     celery_payload = {
-            "user_id":user.user_id,
-            "MangaID": payload.MangaID,
-            "CanvasURL": canvas_url,
-            "target_language": payload.target_language,
-            "Chapters_data": {
-                "ChapterID": chapter_id,
-                "Pages": positions,   
-            },
-        }
-    process.delay(celery_payload)
+        "user_id": user.user_id,
+        "MangaID": payload.MangaID,
+        "CanvasURL": canvas_url,
+        "target_language": payload.target_language,
+        "Chapters_data": {
+            "ChapterID": chapter_id,
+            "Pages": positions,
+        },
+    }
+    async_result = process.delay(celery_payload)
     db.commit()
-    return chapter_ids
-
+    return async_result.id   
 # timeout path
 #client ←──── FIN ────── nginx    (idle too long, nginx closes)
 

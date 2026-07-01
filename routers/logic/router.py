@@ -3,16 +3,14 @@ from fastapi import APIRouter, Depends, UploadFile
 from sqlalchemy.orm import Session
 
 from .depended import get_current_user
-from models.database import get_db
-from schema import TranslateComicRequest
-from . import service
+from app.models.database import get_db
+from .schema import TranslateComicRequest
+from .service import event_stream , create_chapters
 from fastapi.responses import StreamingResponse 
 from fastapi import  Request
 
 
-from .utils import event_stream
-
-from depends.depends import get_cdn, get_cache
+from app.depends.depends import get_cdn, get_cache
 import asyncio
 
 router = APIRouter(prefix="/logic", tags=["Logic"], dependencies=[Depends(get_current_user)])
@@ -32,9 +30,9 @@ async def translate_comic(
     if exist : 
         return exist
     contents = await asyncio.gather(*[f.read() for f in files])
-    chapter_ids = await service.create_chapters(payload, contents, user, db ,cdn )
+    process_number = await create_chapters(payload, contents, user, db ,cdn )
 
-    return {"chapter_ids": chapter_ids}
+    return {"process_number": process_number , "Message": " your Message working on"}
     
 
 

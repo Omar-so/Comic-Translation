@@ -10,15 +10,14 @@ from .config import settings
 
 from .routers.Auth.Auth import router as auth_router
 
-from .routers.logic import router  as Logic_router
+from .routers.logic.router import router  as Logic_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
 
-    setup_logging()
 
     
-    await ImageCache.connectAsync()
+    ImageCache.connectAsync()
 
 
     yield
@@ -33,7 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,7 +45,6 @@ app.include_router(auth_router, tags=["Auth"])
 app.include_router(Logic_router, tags=["Logic"])
 
 
-app.include_router()
 @app.get("/")
 async def root():
     return {"message": "Hello Bigger Applications!"}

@@ -1,5 +1,5 @@
 from paddleocr import PaddleOCR as _PaddleOCR
-from celery.celery import ocr_model
+from app.Worker.model_registry import get_model
 
 from .base import OCRStrategy
 
@@ -19,7 +19,7 @@ class PaddleOCRStrategy(OCRStrategy):
         return ocr
 
     def __init__(self, use_gpu=True):
-        self.ocr = ocr_model
+        self.ocr = get_model("extraction")
 
     def extract(self, pages):
         flat_images = []    

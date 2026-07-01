@@ -4,8 +4,9 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from huggingface_hub import hf_hub_download
-from celery.celery import  lama_model ,device
-import Path
+from app.Worker.model_registry import get_model
+
+from pathlib import Path
 class Inpainting:
 
     @staticmethod
@@ -28,8 +29,8 @@ class Inpainting:
         return model
 
     def __init__(self):
-        self.model = lama_model
-        self.device = device
+        self.model = get_model("inpaint")
+        self.device = get_model("device")
 
     @staticmethod
     def _box_to_polygon(box: dict) -> np.ndarray:

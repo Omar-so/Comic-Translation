@@ -1,8 +1,11 @@
 # database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from models import Base
-from config import settings
+from .base import Base
+from app.config import settings
+
+
+
 engine = create_engine(settings.db_url, echo=True)
 Base.metadata.create_all(engine)
 

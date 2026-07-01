@@ -1,60 +1,49 @@
-# Web Framework
+# ===== Web Framework =====
 fastapi
-uvicorn
+uvicorn[standard]
 
-# Async & HTTP
+# ===== Async & HTTP =====
 aiohttp
-aioredis
 aiofiles
+redis       
+# ===== Database =====
+sqlalchemy
+pymysql
 
-
-redis
-huggingface_hub
-paddleocr
-
-transformers
-ultralytics
-# Image Processing
-opencv-python
-numpy
-
-# Text Rendering & Graphics
-pycairo
-PyGObject
-
-# Translation
-translate
-
-# Configuration
-pydantic-settings
-pydantic
-python-dotenv
-
-# Roboflow Detection (corrected version)
-inference-sdk 
-
-cloudinary
-
-celery
-celery[rabbitmq]    # if using RabbitMQ as broker
-flower              # monitoring dashboard (optional)
+# ===== Task Queue (Celery + RabbitMQ) =====
+celery[rabbitmq]
 kombu
 billiard
 vine
+flower                      # monitoring dashboard, optional — move to a dev/optional file if not needed in prod
 
-sqlalchemy
-
-fastapi
-PIL
-asyncio
-jose
-
+# ===== Auth & Config =====
 pydantic
+pydantic-settings
+python-dotenv
+python-jose[cryptography]
+passlib[bcrypt]             # passlib alone has no working hashing backend without this extra
 
-passlib
-
+# ===== ML / CV Pipeline =====
 torch
+transformers
+ultralytics
+paddleocr
+paddlepaddle                # required by paddleocr but not auto-installed — confirm GPU vs CPU build matches your Dockerfile
+opencv-python
+numpy<2                     # hard ceiling: torch/paddleocr/opencv builds still break on numpy 2.x as of this stack
 
+# ===== Text Rendering & Graphics =====
+pycairo                     # requires libcairo2-dev + pkg-config in the image
+PyGObject                   # requires libgirepository1.0-dev, gir1.2-gtk-3.0, libcairo2-dev, python3-dev
+
+# ===== External Services =====
+huggingface_hub
+inference-sdk                # Roboflow
+cloudinary
 requests
 
-Path
+# ===== Image =====
+Pillow
+translate
+python-multipart

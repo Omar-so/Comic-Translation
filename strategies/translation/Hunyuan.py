@@ -5,7 +5,7 @@ from .base import TranslationStrategy
 
 from transformers import pipeline
 
-from celery.celery import  translation_pipe
+from app.Worker.model_registry import get_model
 
 
 class HunyuanTranslation(TranslationStrategy):
@@ -30,7 +30,7 @@ class HunyuanTranslation(TranslationStrategy):
                     # "ocr_text": ocr_result,  
 
     def __init__(self, to_lang="en"):
-        self.pipe = translation_pipe
+        self.pipe = get_model("translation")
         self.to_lang = to_lang
 
     def translate_blocks(self, pages: List[dict]) -> List[dict]:

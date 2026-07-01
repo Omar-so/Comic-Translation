@@ -1,6 +1,6 @@
-from strategies.cdn.local import LocalCDNStrategy
-from strategies.cdn.cloudinary import CloudinaryCDNStrategy
-from  strategies.cdn.base import CDNStrategy
+from .local import LocalCDNStrategy
+from .cloudinary import CloudinaryCDNStrategy
+from .base import CDNStrategy
 from functools import lru_cache
 
 @lru_cache(maxsize=None)

@@ -1,12 +1,12 @@
-# celery_app.py — shared by both FastAPI and worker
+# app/celery/celery
 from celery import Celery
-from config import settings
+from app.config import settings
 
 celery = Celery(
-    settings.CELERY_APP_NAME,
-    backend=settings.CELERY_RESULT_BACKEND,
-    broker=settings.CELERY_BROKER_URL,
-    include=["tasks.pipline.py"]
+    settings.celery_app_name,
+    backend=settings.celery_result_backend,
+    broker=settings.celery_broker_url,
+    include=["app.tasks.pipeline"]
 )
 
 celery.conf.update(

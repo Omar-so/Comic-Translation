@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     session_expire_seconds: int = 10000
 
     # celery
-    celery_app_name: str
+    celery_app_name: str = "manga_translation"  # keep only this one
     celery_result_backend: Optional[str] = None
     celery_broker_url: str
     celery_worker_running: bool = True

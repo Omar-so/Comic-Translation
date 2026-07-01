@@ -1,7 +1,9 @@
 from fastapi import Cookie, HTTPException, Depends
 from sqlalchemy.orm import Session
-from utils.security import decode_access_token
-from models.database import get_db ,User
+from app.utils.security import decode_access_token
+from app.models.database import get_db 
+from app.models.user import User 
+
 from jose import JWTError
 
 def get_current_user(

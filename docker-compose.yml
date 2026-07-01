@@ -14,7 +14,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,9 +45,12 @@ services:
       retries: 5
 
   fastapi:
-    build: ./app
+    build: .
     restart: always
     env_file: .env
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+            CELERY_WORKER_RUNNING=true celery -A app.celery.celery worker --loglevel=info"
     ports:
       - "8000:8000"
     depends_on:
@@ -57,17 +60,16 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
-
-  celery:
-    build: ./app                 
-    restart: always
-    env_file: .env
-    command: sh -c "CELERY_WORKER_RUNNING=true celery -A app.celery worker --loglevel=info"
-    depends_on:
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+  # celery:
+  #   build: .               
+  #   restart: always
+  #   env_file: .env
+  #   command: sh -c "CELERY_WORKER_RUNNING=true celery -A app.celery worker --loglevel=info"
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
 
 volumes:
   mysql_data:

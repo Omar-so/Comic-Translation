@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from translate import Translator
 
 
 class TranslationStrategy(ABC):
