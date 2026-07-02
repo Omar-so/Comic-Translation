@@ -35,13 +35,17 @@ class CloudinaryCDNStrategy(CDNStrategy):
             secure=True
         )
 
-    def upload(self, data: bytes, filename: str) -> str:
-        result = cloudinary.uploader.upload(
-                BytesIO(data),             
-                public_id=filename,         
-                resource_type="auto",      
-                folder="my_app_uploads",   
+    async def upload(self, data: bytes, filename: str) -> str:
+        loop = asyncio.get_event_loop()
+
+        def _upload():
+            return cloudinary.uploader.upload(
+                BytesIO(data),              #  correct way to pass bytes
+                public_id=filename,         # file name (without extension issues)
+                resource_type="auto",       # auto-detect (image, video, etc.)
+                folder="my_app_uploads",    # optional but important
                 overwrite=True
             )
 
+        result = await loop.run_in_executor(None, _upload)
         return result["secure_url"]

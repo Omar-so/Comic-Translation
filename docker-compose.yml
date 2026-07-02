@@ -45,12 +45,13 @@ services:
       retries: 5
 
   fastapi:
-    build: .
+    build:
+      context: .
+      dockerfile: dockerfile
     restart: always
     env_file: .env
-    command: >
-      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 &
-            CELERY_WORKER_RUNNING=true celery -A app.celery.celery worker --loglevel=info"
+    command: > 
+        sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
     depends_on:
@@ -60,16 +61,21 @@ services:
         condition: service_healthy
       mysql:
         condition: service_healthy
-  # celery:
-  #   build: .               
-  #   restart: always
-  #   env_file: .env
-  #   command: sh -c "CELERY_WORKER_RUNNING=true celery -A app.celery worker --loglevel=info"
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #     rabbitmq:
-  #       condition: service_healthy
+
+  celery:
+    build:
+      context: .
+      dockerfile: celery.dockerfile              
+    restart: always
+    env_file: .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+
 
 volumes:
   mysql_data:

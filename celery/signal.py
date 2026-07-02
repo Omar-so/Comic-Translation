@@ -1,22 +1,20 @@
 import torch
-from celery.signals import worker_process_init
+from celery.signals import worker_init, worker_process_init
 
-from app.celery.celery import celery
 from app.strategies.translation.Hunyuan import HunyuanTranslation
 from app.strategies.detection.Textsegmenter import TextSegmenter
-from app.strategies.ocr.paddle import PaddleOCR
+from app.strategies.ocr.paddle import PaddleOCRStrategy
 from app.utils.Lame import Inpainting
 from app.utils.cache import ImageCache
 from app.Worker.model_registry import set_model
 from app.config import settings
 
-
 def _load_models(use_gpu: bool):
     device = "cuda" if use_gpu else "cpu"
 
-    lama_model, _ = Inpainting.load_lama_model(device)
+    lama_model = Inpainting.load_lama_model(device)
     yolo_model = TextSegmenter.load_text_segmentation_model()
-    ocr_model = PaddleOCR.load_model(use_gpu=use_gpu)
+    ocr_model = PaddleOCRStrategy.load_model(use_gpu=use_gpu)
 
     if not use_gpu:
         lama_model.share_memory()
@@ -29,11 +27,15 @@ def _load_models(use_gpu: bool):
     set_model("detection", yolo_model)
     set_model("extraction", ocr_model)
     set_model("device", device)
+    print(f"Models loaded on {device}.")
 
 
-if not torch.cuda.is_available():
-    _load_models(use_gpu=False)
 
+@worker_init.connect
+def load_models(**kwargs):
+    if not torch.cuda.is_available():
+      _load_models(use_gpu=False)
+    print("Models loaded on CPU. Consider using GPU for better performance.")
 
 @worker_process_init.connect
 def load_models(**kwargs):

@@ -28,6 +28,8 @@ async def create_chapters(
     canvas_bytes, positions = build_canvas(contents)
     canvas_url = await cdn.upload(canvas_bytes, f"{chapter_id}.png")
 
+    print (canvas_url)
+
     chapter = Chapter(
         comic_name=payload.MangaID,
         chapter_id=chapter_id,
@@ -39,7 +41,7 @@ async def create_chapters(
     db.flush()
 
     celery_payload = {
-        "user_id": user.user_id,
+        "user_id": user.id,
         "MangaID": payload.MangaID,
         "CanvasURL": canvas_url,
         "target_language": payload.target_language,

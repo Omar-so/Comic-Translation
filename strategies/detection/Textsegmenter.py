@@ -53,7 +53,7 @@ class TextSegmenter(DetectionStrategy):
 
 
     def __init__(self):
-        self.model = get_model("detection");
+        self.model = get_model("detection")
         self.executor = ThreadPoolExecutor()  
 
 

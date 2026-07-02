@@ -12,10 +12,12 @@ def get_current_user(
 ) -> User:
     if Token_X is None:
         raise HTTPException(status_code=401, detail="not authenticated")
-
+    
+    print(Token_X)
     try:
         payload = decode_access_token(Token_X)
-    except JWTError:
+    except JWTError as e:
+        print(f"JWT Verification Failed: {e}")
         raise HTTPException(status_code=401, detail="invalid or expired token")
 
     user = db.get(User, int(payload["sub"]))

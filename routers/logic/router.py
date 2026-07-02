@@ -1,14 +1,15 @@
-from typing import List
-from fastapi import APIRouter, Depends, UploadFile
+from typing import List , Annotated
+
+from fastapi import APIRouter, Depends, UploadFile, File, Form
 from sqlalchemy.orm import Session
+import json
 
 from .depended import get_current_user
 from app.models.database import get_db
 from .schema import TranslateComicRequest
-from .service import event_stream , create_chapters
-from fastapi.responses import StreamingResponse 
-from fastapi import  Request
-
+from .service import event_stream, create_chapters
+from fastapi.responses import StreamingResponse
+from fastapi import Request
 
 from app.depends.depends import get_cdn, get_cache
 import asyncio
@@ -18,24 +19,23 @@ router = APIRouter(prefix="/logic", tags=["Logic"], dependencies=[Depends(get_cu
 
 @router.post("/translate-comic")
 async def translate_comic(
-    payload: TranslateComicRequest,
-    files: List[UploadFile],
+    payload: Annotated [str , Form(...)],              
+    files: Annotated[List[UploadFile], File()],
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
-    cdn = Depends(get_cdn),
-    cache = Depends(get_cache)
-
+    cdn=Depends(get_cdn),
+    cache=Depends(get_cache),
 ):
-    exist = await cache.getAsync(f"${payload.MangaID}%${payload.ChapterID}")
-    if exist : 
+    parsed_payload = TranslateComicRequest(**json.loads(payload))  
+
+    exist = await cache.getAsync(f"${parsed_payload.MangaID}%${parsed_payload.ChapterID}")
+    if exist:
         return exist
+
     contents = await asyncio.gather(*[f.read() for f in files])
-    process_number = await create_chapters(payload, contents, user, db ,cdn )
+    process_number = await create_chapters(parsed_payload, contents, user, db, cdn)
 
-    return {"process_number": process_number , "Message": " your Message working on"}
-    
-
-
+    return {"process_number": process_number, "Message": "your Message working on"}
 
 
 @router.get("/events/")
