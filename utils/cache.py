@@ -36,6 +36,13 @@ class ImageCache:
     def set(self, key: str, result: dict, ttl: int = 86400):
         self.redis.setex(self._key(key), ttl, json.dumps(result))
 
+    def delete(self, key: str):
+        self.redis.delete(self._key(key))
+
+    def acquire_lock(self, key: str, ttl: int = 3600) -> bool:
+        return bool(self.redis.set(self._key(key), "1", nx=True, ex=ttl))
+
+
     # ── async (FastAPI) ────────────────────────────
     async def getAsync(self, key: str):
         data = await self.aioredis.get(self._key(key))

@@ -36,4 +36,4 @@ requests
 # ===== Image =====
 Pillow
 python-multipart
-
+opencv-python-headless

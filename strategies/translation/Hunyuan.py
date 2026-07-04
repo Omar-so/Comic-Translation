@@ -5,7 +5,7 @@ from .base import TranslationStrategy
 
 from transformers import pipeline
 
-from app.Worker.model_registry import get_model
+from app.celery.model_registry import get_model
 
 
 class HunyuanTranslation(TranslationStrategy):

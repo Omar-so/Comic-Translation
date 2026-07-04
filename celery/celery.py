@@ -1,7 +1,7 @@
 # app/celery/celery
 from celery import Celery
 from app.config import settings
-from . import signal
+
 celery = Celery(
     settings.celery_app_name,
     backend=settings.celery_result_backend,

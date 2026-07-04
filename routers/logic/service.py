@@ -7,7 +7,6 @@ from .utils import build_canvas
 from .schema import TranslateComicRequest
 from fastapi import FastAPI, Response , Request
 
-from app.tasks.pipeline import process
 
 from app.strategies.cdn.base import CDNStrategy
 from app.utils.cache import ImageCache
@@ -50,7 +49,7 @@ async def create_chapters(
             "Pages": positions,
         },
     }
-    async_result = process.delay(celery_payload)
+    async_result = async_result = celery.send_task("app.tasks.pipeline.process",args=[celery_payload],)
     db.commit()
     return async_result.id   
 # timeout path

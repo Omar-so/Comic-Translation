@@ -4,7 +4,7 @@ from functools import lru_cache
 from .LaMe import LaMeInpainting
 
 @lru_cache(maxsize=None)
-def get_ocr_strategy(name: str) -> OCRStrategy:
+def get_inpaint_strategy(name: str) -> OCRStrategy:
     if name == "LaMeInpainting":
         return LaMeInpainting()
     else:

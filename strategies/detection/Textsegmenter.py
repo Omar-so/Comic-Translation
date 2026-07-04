@@ -4,7 +4,7 @@ from PIL import Image
 from ultralytics import YOLO
 from huggingface_hub import hf_hub_download
 
-from app.utils.Lame import Inpainting
+from app.strategies.Inpainting.strategy import get_inpaint_strategy
 from app.utils.image_utils import download_image
 
 
@@ -16,6 +16,7 @@ from concurrent.futures import Future
 
 from app.celery.model_registry import register_strategy , get_model
 
+from app.config import settings
 
 # [{
 #  "MangaID": "string",
@@ -138,8 +139,8 @@ class TextSegmenter(DetectionStrategy):
             all_boxes.append(page_boxes)  
           
         
-
-        inpaint = Inpainting()
+        inpaint = get_inpaint_strategy(settings.Inpainting)
+         
         # in detect():
         future = self.executor.submit(inpaint.process_image_with_lama, all_boxes, page_images)
 

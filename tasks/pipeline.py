@@ -1,6 +1,5 @@
 # app/tasks/pipeline.py
 import json
-import logging
 
 import cv2
 import numpy as np
@@ -15,7 +14,6 @@ from app.strategies.detection.factory import get_detection_stratgy
 from app.strategies.ocr.strategy import get_ocr_strategy
 from app.strategies.translation.strategy import get_translation_stratgy
 
-logger = logging.getLogger(__name__)
 
 
 def _glue_pages(page_ids: list[str], images: list[np.ndarray]) -> tuple[np.ndarray, list[dict]]:
@@ -44,10 +42,6 @@ def _glue_pages(page_ids: list[str], images: list[np.ndarray]) -> tuple[np.ndarr
         cursor += w
 
     return canvas, pages_meta
-
-
-#outbox
-
 @celery.task(bind=True, max_retries=3, default_retry_delay=30)
 def process(self, job: dict) -> dict:
     user_id = job["user_id"]
@@ -55,9 +49,12 @@ def process(self, job: dict) -> dict:
     chapter_id = job["Chapters_data"]["ChapterID"]
     page_ids = [p["PageID"] for p in job["Chapters_data"]["Pages"]]
 
-    # No None-check needed here: each factory either returns a ready
-    # strategy or raises (e.g. HunyuanTranslation.__init__ raises
-    # RuntimeError if build_pipeline() hasn't run yet for this process).
+    cache = ImageCache()
+    lock_key = f"task:{self.request.id}"   # scoped to this task's broker identity, not business keys
+
+    if not cache.acquire_lock(lock_key, ttl=3600):
+        return {"status": "skipped", "reason": "already_processing"}
+
     detector = get_detection_stratgy(settings.detection_strategy)
     ocr_strategy = get_ocr_strategy(settings.ocr_strategy)
     cdn_strategy = get_cdn_strategy(settings.cdn_strategy)
@@ -70,11 +67,8 @@ def process(self, job: dict) -> dict:
             raise ValueError("No text regions detected")
 
         ocr_result = ocr_strategy.extract(boxes)
-
         after_translation = translation_strategy.translate_blocks(ocr_result)
-
         image_cleared = inpaint_future.result()
-
         final_images = render_translated_image(image_cleared, after_translation)
 
         if len(final_images) != len(page_ids):
@@ -84,13 +78,11 @@ def process(self, job: dict) -> dict:
             )
 
         canvas, pages_meta = _glue_pages(page_ids, final_images)
-
         _, img_encoded = cv2.imencode(".png", canvas)
         img_bytes = img_encoded.tobytes()
-        cdn_url = cdn_strategy.upload(img_bytes, f"{chapter_id}_translated.png")  # local var, not worker.x
+        cdn_url = cdn_strategy.upload(img_bytes, f"{chapter_id}_translated.png")
 
-        cache = ImageCache()
-        cache.redis.xadd(f"notifications:{user_id}", {
+        ImageCache.redis.xadd(f"notifications:{user_id}", {
             "user_id": user_id,
             "status": "success",
             "pages_meta": json.dumps(pages_meta),
@@ -100,24 +92,38 @@ def process(self, job: dict) -> dict:
             "cached": "false",
         })
 
+        cache.delete(lock_key)
         return {"status": "success", "cdn_url": cdn_url, "pages_meta": pages_meta}
 
     except Exception as exc:
-        logger.exception(
-            "Pipeline failed for user_id=%s comic_id=%s chapter_id=%s",
-            user_id, comic_id, chapter_id,
-        )
 
-        try:
-            cache = ImageCache()
-            cache.redis.xadd(f"notifications:{user_id}", {
-                "user_id": user_id,
-                "status": "failed",
-                "error": str(exc),
-                "comic_id": comic_id,
-                "chapter_id": chapter_id,
-            })
-        except Exception:
-            logger.exception("Also failed to publish failure notification")
+        is_final_attempt = self.request.retries >= self.max_retries
+
+        if is_final_attempt:
+            cache.delete(lock_key)
+
+            try:
+                ImageCache.redis.xadd(f"notifications:{user_id}", {
+                    "user_id": user_id,
+                    "status": "failed",
+                    "error": str(exc),
+                    "comic_id": comic_id,
+                    "chapter_id": chapter_id,
+                })
+            except Exception:
+                pass
+
+            try:
+                ImageCache.redis.xadd("failed_jobs", {
+                    "task_id": self.request.id,
+                    "manga_id": comic_id,
+                    "chapter_id": chapter_id,
+                    "user_id": user_id,
+                    "error": str(exc),
+                })
+            except Exception:
+                pass
+
+            raise
 
         raise self.retry(exc=exc)

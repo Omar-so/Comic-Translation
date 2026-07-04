@@ -28,26 +28,37 @@ def _load_models(use_gpu: bool):
     detection_model = _load_strategy_model(settings.detection_strategy, use_gpu)
     ocr_model = _load_strategy_model(settings.ocr_strategy, use_gpu)
     inpaint_model = _load_strategy_model(settings.Inpainting, use_gpu)
-    _load_strategy_model(settings.translation_strategy, use_gpu)  
+    _load_strategy_model(settings.translation_strategy, use_gpu)
 
     set_model("inpaint", inpaint_model)
     set_model("detection", detection_model)
     set_model("extraction", ocr_model)
     set_model("device", device)
 
-    print(f"Models loaded on {device}.")
+    print(f"Models loaded on {device}.", flush=True)
 
 
-@worker_init.connect
+@worker_init.connect(weak=False)
 def load_models_main_process(**kwargs):
-    if not torch.cuda.is_available():
-        _load_models(use_gpu=False)
-        print("Models loaded on CPU. Consider using GPU for better performance.")
+    print(">>> worker_init SIGNAL FIRED <<<", flush=True)
+    try:
+        if not torch.cuda.is_available():
+            _load_models(use_gpu=False)
+            print("Models loaded on CPU. Consider using GPU for better performance.", flush=True)
+    except Exception:
+        import traceback
+        print(">>> EXCEPTION IN worker_init <<<", flush=True)
+        traceback.print_exc()
 
 
-@worker_process_init.connect
+@worker_process_init.connect(weak=False)
 def load_models_per_worker(**kwargs):
-    """Runs in each forked child process — required for GPU models."""
-    if torch.cuda.is_available():
-        _load_models(use_gpu=True)
-    ImageCache.connectsync()
+    print(">>> worker_process_init SIGNAL FIRED <<<", flush=True)
+    try:
+        if torch.cuda.is_available():
+            _load_models(use_gpu=True)
+        ImageCache.connectsync()
+    except Exception:
+        import traceback
+        print(">>> EXCEPTION IN worker_process_init <<<", flush=True)
+        traceback.print_exc()

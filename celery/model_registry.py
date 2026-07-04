@@ -1,4 +1,3 @@
-# app/Worker/model_registry.py
 
 _models = {}
 _strategy_registry = {}
